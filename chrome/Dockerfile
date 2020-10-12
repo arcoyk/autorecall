@@ -5,3 +5,6 @@ RUN apk add --no-cache python3 && \
 	pip install --no-cache-dir selenium && \
 	apk add --no-cache chromium && \
 	apk add --no-cache chromium-chromedriver
+
+COPY ./app .
+CMD python3 test.py
