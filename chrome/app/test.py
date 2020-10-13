@@ -4,6 +4,7 @@ import json
 
 app = Flask(__name__)
 driver = "/usr/bin/chromedriver"
+# driver = "../chromedriver"
 ims = ImageSearch(driver, headless=True)
 
 @app.route("/", methods=["POST"])

@@ -2,9 +2,11 @@ From alpine:edge
 
 RUN apk add --no-cache python3 && \
 	apk add --no-cache py3-pip && \
-	pip install --no-cache-dir selenium && \
 	apk add --no-cache chromium && \
-	apk add --no-cache chromium-chromedriver
+	apk add --no-cache chromium-chromedriver && \
+	pip install --no-cache-dir selenium && \
+	pip install --no-cache-dir flask 
 
-COPY ./app .
-CMD python3 test.py
+ADD ./app ./app
+ENV FLASK_APP test.py
+CMD cd app && flask run --host='0.0.0.0' --port=80
