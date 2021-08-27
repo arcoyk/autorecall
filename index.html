@@ -2,9 +2,9 @@
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
-            background-color: rgb(245, 245, 245);
+            background-color: rgb(243, 243, 243);
         }
-        .vid {
+        .vid1 {
             object-fit: cover;
             height: 300px;
             width: 200px;
@@ -19,7 +19,7 @@
             width: 200px;
             border-radius: 6%/4%;
             position: absolute;
-            background-color: rgb(236, 236, 236);
+            background-color: rgb(230, 230, 230);
             top: 100px;
             left: 730px;
         }
@@ -79,35 +79,97 @@
         .yellow {
             background-color: yellow;
         }
+        .cover {
+            padding: 70px;
+            width: 500px;
+            height: 300px;
+            background-color: rgb(255, 255, 255);
+            color: rgb(20, 20, 20);
+            font-size: 40px;
+            text-align: center;
+            position: absolute;
+            z-index: 10;
+            top: 25%;
+            left: 25%;
+            border-radius: 4%/5%;
+        }
+        p {
+            font-size: 30px;;
+        }
+        .cover-button {
+            width: 20px;
+            height: 20px;
+            position: relative;
+            right: -510px;
+            top: -50px;
+            color: rgb(179, 179, 179);
+            cursor: pointer;
+        }
+        .guide {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+            width: 340px;
+            border-bottom: 5px solid rgb(243, 243, 0);
+            position: absolute;
+        }
+        .g1 {
+            left: 500px;
+            top: 25px;
+        }
+        .g2 {
+            left: 100px;
+            top: 420px;
+        }
+        .g3 {
+            width: 450px;
+            bottom: 30px;
+            left: 100px;
+        }
     </style>
     <script src="./data/data50.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.6.0/dist/tf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
-    <body>     
-        <video class="vid" autoplay>
-        </video>
-        <video class="vid2" autoplay>            
-        </video>
-        <div class="vt1">video 1</div>
-        <div class="vt2">video 2</div>        
-        <div class="log">
-            <div class='s1'>state1</div>
-            <div class='s2'>state2</div>
-            <div class='s3'>state3</div>
-            <div class='s4'>state4</div>
-            <div class='s5'>state5</div>
+    <body>
+        <div class="cover">
+            <div class="cover-button">×</div>
+            Q：<b>日本の料理</b>をなるべく<br>多く教えてください
+            <p>まずは<br><b>「お寿司」「おでん」</b><br>と言ってください</p>
         </div>
-        <div class="line">
-            ...
-        </div>
-        <div class="shadow" hidden>
-            <div class="card">
-                <div class="card-text">
-                    hoge
+        <span class="span" hidden>
+            <div class="guide g1">
+                ① これは連想能力の拡張システムです。会議などで発想をアシストします
+            </div>
+            <div class="guide g2">
+                ② コンピュータが会話に反応して連想します
+            </div>
+            <div class="guide g3">
+                ③ 料理の言葉に反応します。新しいレシピ考えてみましょう
+            </div>
+            <video class="vid1" autoplay>
+            </video>
+            <video class="vid2" autoplay>
+            </video>
+            <div class="vt1">video 1</div>
+            <div class="vt2">video 2</div>        
+            <div class="log">
+                <div class='s1'>state1</div>
+                <div class='s2'>state2</div>
+                <div class='s3'>state3</div>
+                <div class='s4'>state4</div>
+                <div class='s5'>state5</div>
+            </div>
+            <div class="line">
+                ...
+            </div>
+            <div class="shadow" hidden>
+                <div class="card">
+                    <div class="card-text">
+                        hoge
+                    </div>
                 </div>
             </div>
-        </div>
+        </soan>
     </body>
 
     <script>
@@ -245,10 +307,26 @@
             let ws = genBets(w1, w2, 10);
             updateCards(ws);
         }, 5000);
+        function initCover() {
+            let c = byClass("cover")[0];
+            let s = byClass("span")[0];
+            let btn = byClass("cover-button")[0];
+            btn.onclick = () => {
+                c.hidden = true;
+                s.hidden = false;
+            }
+        }
+        function hideCover() {            
+            let c = byClass("cover")[0];
+            let s = byClass("span")[0];
+            c.hidden = true;
+            s.hidden = false;
+        }
         window.onload = () => {
             initCards();
             initSpeech();
             initWord2vec();
+            initCover();
         }
     </script>
 
@@ -288,6 +366,10 @@
             tar.innerText = text;
             let hits = getHits(text, g.hds);
             domHighlight(tar, hits);
+            // cover
+            if (text.indexOf("寿司") != -1 && text.indexOf("おでん") != -1) {
+                hideCover();
+            }
         }
     </script>
 
@@ -299,7 +381,7 @@
                 height: { ideal: 720 }
             }
         }).then(function(s) {
-            let vid = byClass("vid")[0];
+            let vid = byClass("vid1")[0];
             vid.srcObject = s;
         });
     </script>
