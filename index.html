@@ -2,13 +2,40 @@
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
+            background-color: rgb(247, 247, 247);
         }
         .vid {
-            width: 100%;
-            height: 100%;
+            object-fit: cover;
+            height: 300px;
+            width: 200px;
+            border-radius: 6%/4%;
             position: absolute;
-            top: 0px;
-            left: 0px;
+            top: 100px;
+            left: 500px;
+        }
+        .vid2 {
+            object-fit: cover;
+            height: 300px;
+            width: 200px;
+            border-radius: 6%/4%;
+            position: absolute;
+            background-color: rgb(236, 236, 236);
+            top: 100px;
+            left: 730px;
+        }
+        .vt1 {
+            font-size: 13px;
+            font-weight: bold;
+            position: absolute;
+            top: 410px;
+            left: 570px;
+        }
+        .vt2 {
+            font-size: 13px;
+            font-weight: bold;
+            position: absolute;
+            top: 410px;
+            left: 800px;
         }
         .log {
             position: absolute;
@@ -17,14 +44,13 @@
             font-size: 10px;
             top: 100px;
             left: 100px;
-            height: 400px;
+            height: 300px;
             overflow: hidden;
             width: 300px;
         }
         .card {
             font-family: Helvetica, sans-serif;
             vertical-align: bottom;
-            padding: 10px;
             font-size: 20px;
             padding: 10px;
             background-size: cover;
@@ -32,7 +58,11 @@
             width: 100px;
             height: 150px;
             position: absolute;
-            color: white;
+            color: rgb(0, 0, 0);
+        }
+        .card-text {
+            position: relative;
+            top: 170px;
         }
         .clickable:hover {
             border: 2px solid grey;
@@ -53,9 +83,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.6.0/dist/tf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
-    <body>
+    <body>     
         <video class="vid" autoplay>
         </video>
+        <video class="vid2" autoplay>            
+        </video>
+        <div class="vt1">video 1</div>
+        <div class="vt2">video 2</div>        
         <div class="log">
             <div class='s1'>state1</div>
             <div class='s2'>state2</div>
@@ -68,6 +102,9 @@
         </div>
         <div class="shadow" hidden>
             <div class="card">
+                <div class="card-text">
+                    hoge
+                </div>
             </div>
         </div>
     </body>
@@ -160,14 +197,18 @@
         function updateCard(c, t) {
             if (!c) return c;
             let url = "https://res.cloudinary.com/dhw3ap07h/image/upload/w_120,h_170,c_thumb/" + t + ".jpg";
+            if (t == ".") {
+                url = "https://res.cloudinary.com/dhw3ap07h/image/upload/v1630086646/blank.png";
+            }
             c.style.background = "url(" + url + ")";
-            c.innerText = t
+            let p = byClass("card-text", c)[0];
+            p.innerText = t;
             return c;
         }
         function initCards() {
             for (let x = 0; x < 8; x++) {
-                let c = createCard("-");
-                c.style.bottom = 150;
+                let c = createCard(".");
+                c.style.bottom = 200;
                 c.style.left = x * 140 + 100;
                 document.body.appendChild(c);
                 g.cards.push(c);
@@ -237,7 +278,7 @@
         function domHighlight(tar, ws) {
             let text = tar.innerText;
             for (let w of ws.sort((a, b) => a.length - b.length).reverse()) {
-                text = (text.split(w)).join(" <span class='yellow'>" + w + "</span> ");
+                text = (text.split(w)).join("<span class='yellow'>" + w + "</span>");
             }
             tar.innerHTML = text;
         }
