@@ -1,0 +1,323 @@
+<html>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .vid {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+        }
+        .log {
+            position: absolute;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 10px;
+            top: 100px;
+            left: 100px;
+            height: 400px;
+            overflow: hidden;
+            width: 300px;
+        }
+        .card {
+            font-family: Helvetica, sans-serif;
+            vertical-align: bottom;
+            padding: 10px;
+            font-size: 20px;
+            padding: 10px;
+            background-size: cover;
+            border-radius: 9%/6%;
+            width: 100px;
+            height: 150px;
+            position: absolute;
+            color: white;
+        }
+        .clickable:hover {
+            border: 2px solid grey;
+            cursor: pointer;
+        }
+        .line {
+            font-size: 30px;
+            position: absolute;
+            bottom: 70px;
+            left: 100px;
+            width: 1100px;
+        }
+        .yellow {
+            background-color: yellow;
+        }
+    </style>
+    <script src="./data/data50.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.6.0/dist/tf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <body>
+        <video class="vid" autoplay>
+        </video>
+        <div class="log">
+            <div class='s1'>state1</div>
+            <div class='s2'>state2</div>
+            <div class='s3'>state3</div>
+            <div class='s4'>state4</div>
+            <div class='s5'>state5</div>
+        </div>
+        <div class="line">
+            ...
+        </div>
+        <div class="shadow" hidden>
+            <div class="card">
+            </div>
+        </div>
+    </body>
+
+    <script>
+        let g = {};
+        function byClass(t, p=document) {
+            return p.getElementsByClassName(t);
+        }
+        function clone(c, p=document) {
+            let r = byClass(c, p)[0].cloneNode(true);
+            return r;
+        }
+    </script>
+
+    <script>
+        // tf.enableDebugMode()
+        word2vec = {};
+        function initWord2vec() {
+            Data.wid = {};
+            Data.ws.map((e, i) => Data.wid[e] = i);
+            Data.tensor = {};
+            Data.tensor.vs = tf.tensor(Data.vs);
+            word2vec.w2v = function(w) {
+                return Data.vs[Data.wid[w]];
+            }
+            word2vec.w2ws = function(w, topn=5) {
+                return tf.tidy(() => {
+                    let v = word2vec.w2v(w);
+                    v = tf.tensor(v);
+                    return word2vec.v2ws(v);
+                });
+            }
+            word2vec.v2ws = function(v, topn=5) {
+                return tf.tidy(() => {
+                    v = v.reshape([v.shape[0], 1]);
+                    let p = tf.matMul(Data.tensor.vs, v);
+                    p = p.flatten();
+                    let ids = tf.topk(p, topn).indices;
+                    ids = ids.arraySync();
+                    p = p.arraySync();
+                    // remove the first
+                    ids.shift();
+                    let ws = ids.map(i => Data.ws[i]);
+                    let ps = ids.map(i => p[i]);
+                    return {ws:ws, ps:ps};
+                });
+            }
+        }
+        function between(vs, gs) {
+            return tf.tidy(() => {
+                vs = tf.tensor(vs);
+                gs = tf.tensor(gs);
+                vs = vs.transpose();
+                vs = tf.mul(vs, gs);
+                v = vs.sum(-1);
+                return tf.div(v, tf.norm(v));
+            });
+        }
+        function dis(x1, y1, x2, y2) {
+            let a = x1 - x2;
+            let b = y1 - y2;
+            return Math.sqrt(a * a + b * b);
+        }
+        function genBets(w1, w2, n) {
+            let ws = [w1, w2];
+            let vs = ws.map(w => word2vec.w2v(w));
+            for (let i = 0; i < (n-2); i++) {
+                let gs = [(n-2) - i, i];
+                let v = between(vs, gs);
+                for (let w of word2vec.v2ws(v).ws) {
+                    if (ws.indexOf(w) != -1) continue;
+                    ws.push(w);
+                    break;
+                }
+            }
+            ws.splice(1,1);
+            ws.push(w2);
+            return ws;
+        }
+    </script>
+
+    <script>
+        g.cards = [];
+        function createCard(t) {
+            let c = clone("card");
+            c = updateCard(c, t);
+            return c;
+        }
+        function updateCard(c, t) {
+            if (!c) return c;
+            let url = "https://res.cloudinary.com/dhw3ap07h/image/upload/w_120,h_170,c_thumb/" + t + ".jpg";
+            c.style.background = "url(" + url + ")";
+            c.innerText = t
+            return c;
+        }
+        function initCards() {
+            for (let x = 0; x < 8; x++) {
+                let c = createCard("-");
+                c.style.bottom = 150;
+                c.style.left = x * 140 + 100;
+                document.body.appendChild(c);
+                g.cards.push(c);
+            }
+            let c1 = g.cards[0];
+            let c2 = g.cards[g.cards.length - 1];
+            c1.classList.add("clickable");
+            c2.classList.add("clickable");
+            c1.onclick = () => {
+                let w1 = _.sample(Data.ws);
+                let w2 = c2.innerText;
+                let ws = genBets(w1, w2, 10);
+                updateCards(ws);
+            }
+            c2.onclick = () => {
+                let w1 = c1.innerText;
+                let w2 = _.sample(Data.ws);
+                let ws = genBets(w1, w2, 10);
+                updateCards(ws);
+            }
+        }
+        function updateCards(ws) {
+            for (let i = 0; i < ws.length; i++) {
+                let w = ws[i];
+                let c = g.cards[i];
+                updateCard(c, w);
+            }
+        }
+        setInterval(() => {
+            if (g.hits.length < 2) return;
+            let w1 = g.hits[g.hits.length - 1];
+            let w2 = _.sample(g.hits);
+            let ws = genBets(w1, w2, 10);
+            updateCards(ws);
+        }, 5000);
+        window.onload = () => {
+            initCards();
+            initSpeech();
+            initWord2vec();
+        }
+    </script>
+
+    <script>
+        g.hits = [];
+        g.hds = initHeads(Data.ws);
+        function initHeads(ws) {
+            let hds = {};
+            for (let w of ws) {
+                let h = w[0];
+                if (hds[h] == undefined) hds[h] = [];
+                hds[h].push(w); 
+            }
+            return hds;
+        }
+        function getHits(text, hds) {
+            let hits = [];
+            for (let c of new Set(text)) {
+                if (hds[c] == undefined) continue;
+                let _ws = hds[c];
+                _ws = _ws.filter(w => text.indexOf(w) != -1);
+                hits = hits.concat(_ws);
+            }
+            g.hits = g.hits.concat(hits);
+            g.hits = _.uniq(g.hits);
+            return hits;
+        }
+        function domHighlight(tar, ws) {
+            let text = tar.innerText;
+            for (let w of ws.sort((a, b) => a.length - b.length).reverse()) {
+                text = (text.split(w)).join(" <span class='yellow'>" + w + "</span> ");
+            }
+            tar.innerHTML = text;
+        }
+        function updateLine(text) {
+            let tar = byClass("line")[0];
+            tar.innerText = text;
+            let hits = getHits(text, g.hds);
+            domHighlight(tar, hits);
+        }
+    </script>
+
+    <script>
+        media = navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+                width: { ideal: 1080 },
+                height: { ideal: 720 }
+            }
+        }).then(function(s) {
+            let vid = byClass("vid")[0];
+            vid.srcObject = s;
+        });
+    </script>
+
+    <script>
+        let s1, s2, s3, s4, s5, s6;
+        function startSpeech() {
+            SpeechRecognition = webkitSpeechRecognition || SpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = "ja";
+            fa(s4, recognition.lang);
+            recognition.onaudiostart = e => fa(s1, "audio start");
+            recognition.onaudioend = e => {fa(s1, "audio end"); initSpeech()};
+            recognition.onsoundstart = e => fa(s2, "sound start");
+            recognition.onsoundend = e => fa(s2, "sound end");
+            recognition.onspeechstart = e => fa(s3, "speech start");
+            recognition.onspeechend = e => fa(s3, "speech end");      
+            recognition.onnomatch = e => fa(s4, "not confident"); 
+            recognition.onresult = (e) => {
+                // type(recognition) -> SpeechRecognition (recognition setting)
+                // type(e) -> SpeechRecognitionEvent (general Event inherited)
+                // type(e.results) -> SpeechRecognitionResultList (don't know)
+                // type(e.results[0]) -> SpeechRecognitionResult (candidates)
+                // type(e.results[0].item(0)) -> SpeechRecognitionAlternative (you need this)
+                r = e.results[0];
+                a = e.results[0].item(0); // could be 1 if r.length is 1
+                var arr = []
+                arr.push(r.length);
+                arr.push(r.isFinal);
+                arr.push(a.transcript);
+                updateLine(a.transcript);
+                arr.push(a.confidence);
+                arr.push(e.timeStamp);
+                ga(arr.join('|'));
+                if (r.isFinal) {
+                    initSpeech();
+                }
+            }
+            recognition.start();
+        }
+        function fa(e, t) {
+            e.innerText = t;
+        }
+        function ga(t) {
+            let e = document.createElement("div");
+            e.innerText = t;
+            let b = byClass("log")[0];
+            b.insertBefore(e, b.firstChild);
+        }
+        function initSpeech() {
+            s1 = byClass("s1")[0];
+            s2 = byClass("s2")[0];
+            s3 = byClass("s3")[0];
+            s4 = byClass("s4")[0];
+            s5 = byClass("s5")[0];
+            s6 = byClass("s6")[0];
+            startSpeech();
+        }
+    </script>
+
+</html>
